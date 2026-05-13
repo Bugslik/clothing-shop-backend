@@ -20,7 +20,7 @@ async function main() {
   await prisma.order.deleteMany({});
   await prisma.product.deleteMany({});
 
-  const FRONTEND = "http://localhost:5173";
+  const FRONTEND = "https://clothing-shop-alpha-weld.vercel.app";
   const products = [
     {
       name: "Oversized Linen Blazer",
