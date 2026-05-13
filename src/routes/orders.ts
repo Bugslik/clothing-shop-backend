@@ -1,6 +1,22 @@
 import { Router, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, AuthRequest } from "../middleware/auth";
+import https from "https";
+
+const TELEGRAM_TOKEN = "8893912015:AAFAGjVtXxB62leIJV1lsa5xiOrZTjSxmGA";
+const TELEGRAM_CHAT_ID = "1412908901";
+
+function sendTelegramMessage(text: string) {
+  const body = JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: "HTML" });
+  const req = https.request({
+    hostname: "api.telegram.org",
+    path: `/bot${TELEGRAM_TOKEN}/sendMessage`,
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+  });
+  req.write(body);
+  req.end();
+}
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -54,6 +70,18 @@ router.post("/", requireAuth, async (req: AuthRequest, res: Response) => {
     where: { id: req.user!.id },
     data: { bonusCredit: remainingCredit },
   });
+
+  const orderDate = new Date(order.createdAt).toLocaleString("ru-RU", { timeZone: "Asia/Tashkent" });
+  const itemLines = order.items.map(i => `  • ${i.product.name} x${i.qty} (${i.size}) — $${(i.price * i.qty).toFixed(2)}`).join("\n");
+  sendTelegramMessage(
+    `🛍 <b>New Order #${order.id}</b>\n` +
+    `📅 ${orderDate}\n\n` +
+    `👤 <b>Client:</b> ${user!.name}\n` +
+    `📧 ${user!.email}\n\n` +
+    `📦 <b>Items:</b>\n${itemLines}\n\n` +
+    `💰 <b>Total: $${order.total.toFixed(2)}</b>` +
+    (creditApplied > 0 ? ` (discount: $${creditApplied.toFixed(2)})` : "")
+  );
 
   res.status(201).json({ ...order, creditApplied, earned, nextCredit: remainingCredit });
 });
