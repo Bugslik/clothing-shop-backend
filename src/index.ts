@@ -13,6 +13,15 @@ const PORT = process.env.PORT || 4000;
 app.use(cors({ origin: ["http://localhost:5173", "http://localhost:5174", "https://clothing-shop-alpha-weld.vercel.app"], credentials: true }));
 app.use(express.json({ limit: "10mb" }));
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "hined.fits API",
+    version: "1.0.0",
+    status: "ok",
+    endpoints: ["/products", "/auth", "/orders"],
+  });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
